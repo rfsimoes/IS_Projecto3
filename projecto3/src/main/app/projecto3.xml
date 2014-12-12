@@ -1,7 +1,104 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
-http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd"></mule>
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd">
+    <db:generic-config name="Generic_Database_Configuration" url="jdbc:postgresql://localhost:5432/IS?user=postgres&amp;password=postgres" driverClassName="org.postgresql.Driver" doc:name="Generic Database Configuration"/>
+    <smtp:gmail-connector name="Gmail" validateConnections="true" doc:name="Gmail"/>
+    <flow name="confirmation" doc:name="confirmation">
+        <http:inbound-endpoint exchange-pattern="request-response" address="http://localhost:8081/confirmation" doc:name="HTTP"/>
+        <http:body-to-parameter-map-transformer doc:name="Body to Parameter Map"/>
+        <choice doc:name="Choice">
+            <when expression="(payload.type == 's')">
+                <db:update config-ref="Generic_Database_Configuration" doc:name="ConfirmSub">
+                    <db:parameterized-query><![CDATA[UPDATE subscribers SET validated = 1 WHERE email = #[payload.code];]]></db:parameterized-query>
+                </db:update>
+                <set-payload value="YOU ARE NOW SUBSCRIBED" doc:name="Set Payload"/>
+            </when>
+            <when expression="(payload.type == 'u')">
+                <db:delete config-ref="Generic_Database_Configuration" doc:name="ConfirmUnsub">
+                    <db:parameterized-query><![CDATA[DELETE FROM subscribers WHERE email = #[payload.code];]]></db:parameterized-query>
+                </db:delete>
+                <set-payload value="YOU ARE NOW UNSUBSCRIBED" doc:name="Set Payload"/>
+            </when>
+            <otherwise>
+                <set-payload value="ERROR CONFIRMING SUB/UNSUB" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="ws_subscrive/unsubscrive_flow" doc:name="ws_subscrive/unsubscrive_flow">
+        <http:inbound-endpoint exchange-pattern="request-response"   doc:name="HTTP" address="http://localhost:8081/ws_sub_unsub"/>
+        <cxf:jaxws-service doc:name="SOAP" serviceClass="ws.SubscriptionUnsubscription"/>
+        <choice doc:name="Choice">
+            <when expression="method.name=='subscribe'">
+
+                <flow-ref name="subscribe" doc:name="Subscribe Flow"/>
+            </when>
+            <when expression="method.name=='unsubscribe'">
+                <flow-ref name="unsubscribe" doc:name="Unsubscribe Flow"/>
+            </when>
+
+            <otherwise>
+                <set-payload value="ERROR CHOICE SUB/UNSUB" doc:name="Set Payload"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <sub-flow name="subscribe" doc:name="subscribe">
+        <enricher doc:name="Message Enricher">
+            <db:select config-ref="Generic_Database_Configuration" doc:name="Check existence in Database">
+                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[payload[0]]]]></db:parameterized-query>
+
+            </db:select>
+            <enrich source="#[payload.size() &gt; 0]" target="#[flowVars.exists]"/>
+            <enrich source="#[payload]" target="#[flowVars.dbRecord]"/>
+        </enricher>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars['exists']==false]">
+        <expression-component doc:name="Subscribe"><![CDATA[flowVars.email=payload[0];
+flowVars.region=payload[1];
+flowVars.soap=payload[2];
+flowVars.digest = payload[3];]]></expression-component>
+                <db:insert config-ref="Generic_Database_Configuration" doc:name="Insert Subscription">
+                    <db:parameterized-query><![CDATA[INSERT INTO subscribers VALUES(nextval('subscribers_id_seq'), #[payload[0]],#[payload[1]],#[payload[2]],#[payload[3]],0);]]></db:parameterized-query>
+                </db:insert>
+                <set-payload value="Confirm your subscription by clicking the link: http://localhost:8081/confirmation?code=#[flowVars.email]&amp;type=s" doc:name="Set Email Body"/>
+                <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[flowVars.email]" from="systemsintegration14@gmail.com" subject="Confirm your subscription" responseTimeout="10000" doc:name="Confirmation Email"/>
+
+                <set-payload value="AN EMAIL HAS BEEN SENT. YOU STILL NEED TO CONFIRM YOUR SUBSCRIPTION." doc:name="SUCCESS"/>
+            </when>
+            <otherwise>
+                <set-payload value="EMAIL ALREADY EXISTS" doc:name="ERROR"/>
+            </otherwise>
+        </choice>
+
+    </sub-flow>
+    <sub-flow name="unsubscribe" doc:name="unsubscribe">
+        <enricher doc:name="Message Enricher">
+            <db:select config-ref="Generic_Database_Configuration" doc:name="Check existence in Database">
+                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[payload]]]></db:parameterized-query>
+            </db:select>
+            <enrich source="#[payload.size() &gt; 0]" target="#[flowVars.exists]"/>
+            <enrich source="#[payload]" target="#[flowVars.dbRecord]"/>
+        </enricher>
+        <choice doc:name="Choice">
+            <when expression="#[flowVars['exists']==true]">
+                <expression-component doc:name="Unsubscribe"><![CDATA[flowVars.email=payload;
+]]></expression-component>
+                <set-payload value="Confirm your unsubscription by clicking the link: http://localhost:8081/confirmation?code=#[flowVars.email]&amp;type=u" doc:name="Set Email Body"/>
+                <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[flowVars.email]" from="systemsintegration14@gmail.com" subject="Confirm your subscription" responseTimeout="10000" doc:name="Confirmation Email"/>
+                <set-payload value="AN EMAIL HAS BEEN SENT. YOU STILL NEED TO CONFIRM YOUR UNSUBSCRIPTION." doc:name="SUCCESS"/>
+            </when>
+            <otherwise>
+                <set-payload value="EMAIL DOESN'T EXIST" doc:name="ERROR"/>
+            </otherwise>
+        </choice>
+    </sub-flow>
+
+</mule>
