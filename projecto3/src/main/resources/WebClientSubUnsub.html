@@ -1,0 +1,48 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>CNN News</title>
+</head>
+
+<body>
+	<h1>CNN News</h1>
+
+	<h3>Subscribe</h3>
+	<form method="get" action="/webclient">
+		<p>
+			Email: <input type="email" name="email" id="email" />
+		</p>
+		<p>
+			Favorite region: <select name="region" id="select">
+				<option value="US">US</option>
+				<option value="AFRICA">AFRICA</option>
+				<option value="ASIA">ASIA</option>
+				<option value="EUROPE">EUROPE</option>
+				<option value="LATINAMERICA">LATIN AMERICA</option>
+				<option value="MIDDLEEAST">MIDDLE EAST</option>
+			</select>
+		</p>
+		<p>
+			Client type: <select name="soap" id="select">
+				<option value="0">Web Client</option>
+			</select>
+		</p>
+		<p>
+			Subscription type: <select name="digest" id="select">
+				<option value="0">Non-digest Email</option>
+				<option value="1">Digest Email</option>
+			</select>
+		</p>
+		<input name="action" type="submit" value="Subscribe" />
+	</form>
+
+	<h3>Unsubscribe</h3>
+	<form method="get" action="/webclient">
+		<p>
+			Email: <input type="email" name="email" id="email" />
+		</p>
+		<input name="action" type="submit" value="Unsubscribe" />
+	</form>
+</body>
+</html>

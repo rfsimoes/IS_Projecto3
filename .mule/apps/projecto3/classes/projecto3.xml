@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -9,11 +9,105 @@ http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
-http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd">
+http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:postgresql://localhost:5432/IS?user=postgres&amp;password=postgres" driverClassName="org.postgresql.Driver" doc:name="Generic Database Configuration"/>
     <smtp:gmail-connector name="Gmail" validateConnections="true" doc:name="Gmail"/>
+    <mulexml:jaxb-context name="myJaxb" packageNames="generated" doc:name="JAXB Context"/>
+    <mulexml:schema-validation-filter schemaLocations="Example.xsd" returnResult="true" name="Schema_Validation" doc:name="Schema Validation"/>
+    <flow name="readfile" doc:name="readfile">
+        <file:inbound-endpoint path="C:\CNN" responseTimeout="10000" doc:name="File"/>
+        <flow-ref name="addnews" doc:name="Flow Reference"/>
+    </flow>
+    <flow name="webclient" doc:name="webclient">
+        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="webclient" doc:name="HTTP"/>
+        <http:body-to-parameter-map-transformer doc:name="Body to Parameter Map"/>
+        <choice doc:name="Choice">
+            <when expression="payload['action'] == &quot;Subscribe&quot;">
+                <expression-component doc:name="Expression"><![CDATA[flowVars.email=payload.email;
+flowVars.region=payload.region;
+flowVars.soap=Integer.parseInt(payload.soap);
+flowVars.digest = Integer.parseInt(payload.digest);]]></expression-component>
+                <flow-ref name="subscribe" doc:name="Subscribe"/>
+            </when>
+            <when expression="payload['action'] == &quot;Unsubscribe&quot;">
+                <expression-component doc:name="Expression"><![CDATA[flowVars.email=payload.email;]]></expression-component>
+                <flow-ref name="unsubscribe" doc:name="Unsubscribe"/>
+            </when>
+            <otherwise>
+                <http:static-resource-handler resourceBase="src/main/resources" defaultFile="WebClientSubUnsub.html" doc:name="HTTP Static Resource Handler"/>
+            </otherwise>
+        </choice>
+    </flow>
+    <flow name="ws_addnews" doc:name="ws_addnews">
+        <http:inbound-endpoint exchange-pattern="request-response"  doc:name="HTTP" host="localhost" path="ws_addnews" port="8081"/>
+        <cxf:jaxws-service serviceClass="ws.AddNews" doc:name="SOAP"/>
+        <flow-ref name="addnews" doc:name="Add News SubFlow"/>
+    </flow>
+    <flow name="addnews" doc:name="addnews">
+        <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="myJaxb" doc:name="XML to JAXB Object"/>
+        <foreach collection="payload.region" doc:name="For Each Region">
+            <logger message="#[payload.name]" level="INFO" doc:name="Logger"/>
+            <expression-component doc:name="Expression"><![CDATA[flowVars.region = payload.name;]]></expression-component>
+            <foreach collection="payload.news" doc:name="For Each News in Region">
+                <logger message="#[payload.title]" level="INFO" doc:name="Logger"/>
+                <choice doc:name="Choice">
+                    <when expression="payload.photoURL != null || payload.videoURL != null">
+                        <flow-ref name="insertnews" doc:name="Flow Reference"/>
+                    </when>
+                    <otherwise>
+                        <logger message="N&#195;O TEM MEDIA" level="INFO" doc:name="Logger"/>
+                    </otherwise>
+                </choice>
+            </foreach>
+        </foreach>
+    </flow>
+    <flow name="insertnews" doc:name="insertnews">
+        <logger message="TEM MEDIA" level="INFO" doc:name="Logger"/>
+        <expression-component doc:name="Expression"><![CDATA[import java.util.Calendar;
+
+Calendar cal = Calendar.getInstance();
+cal.set(Calendar.YEAR, payload.date.year);
+cal.set(Calendar.MONTH, payload.date.month);
+cal.set(Calendar.DATE, payload.date.day);
+cal.set(Calendar.HOUR_OF_DAY,  payload.date.hour/100);
+cal.set(Calendar.MINUTE,  payload.date.hour%100);
+cal.set(Calendar.SECOND, 0);
+cal.set(Calendar.MILLISECOND, 0);
+java.sql.Timestamp jsqlTs = new java.sql.Timestamp(cal.getTime().getTime());
+
+flowVars.date = jsqlTs;]]></expression-component>
+        <db:insert config-ref="Generic_Database_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[INSERT INTO news VALUES(nextval('news_newsid_seq'), #[flowVars.date],#[payload.photoURL],#[flowVars.region],#[payload.text],#[payload.title],#[payload.url],#[payload.videoURL]);]]></db:parameterized-query>
+        </db:insert>
+    </flow>
+    <flow name="insertauthors" doc:name="insertauthors">
+        <foreach collection="payload.author" doc:name="For Each">
+            <enricher doc:name="Message Enricher">
+                <db:select config-ref="Generic_Database_Configuration" doc:name="Check existence in Database">
+                    <db:parameterized-query><![CDATA[SELECT name FROM author WHERE name=#[payload]]]></db:parameterized-query>
+                </db:select>
+                <enrich source="#[payload.size() &gt; 0]" target="#[flowVars.exists]"/>
+                <enrich source="#[payload]" target="#[flowVars.dbRecord]"/>
+            </enricher>
+            <choice doc:name="Choice">
+                <when expression="#[flowVars['exists']==false]">
+                    <db:insert config-ref="Generic_Database_Configuration" doc:name="Database">
+                        <db:parameterized-query><![CDATA[INSERT INTO author VALUES (#[payload]);]]></db:parameterized-query>
+                    </db:insert>
+                </when>
+                <otherwise>
+                    <logger message="AUTHOR ALREADY EXITS" level="INFO" doc:name="Logger"/>
+                </otherwise>
+            </choice>
+        </foreach>
+    </flow>
+    <sub-flow name="invalid_xml" doc:name="invalid_xml">
+        <logger message="Invalid XML" level="ERROR" doc:name="Logger"/>
+    </sub-flow>
     <flow name="confirmation" doc:name="confirmation">
-        <http:inbound-endpoint exchange-pattern="request-response" address="http://localhost:8081/confirmation" doc:name="HTTP"/>
+        <http:inbound-endpoint exchange-pattern="request-response"  doc:name="HTTP" host="localhost" path="confirmation" port="8081"/>
         <http:body-to-parameter-map-transformer doc:name="Body to Parameter Map"/>
         <choice doc:name="Choice">
             <when expression="(payload.type == 's')">
@@ -33,16 +127,22 @@ http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smt
             </otherwise>
         </choice>
     </flow>
-    <flow name="ws_subscrive/unsubscrive_flow" doc:name="ws_subscrive/unsubscrive_flow">
-        <http:inbound-endpoint exchange-pattern="request-response"   doc:name="HTTP" address="http://localhost:8081/ws_sub_unsub"/>
+    <flow name="ws_subscribe/unsubscribe_flow" doc:name="ws_subscribe/unsubscribe_flow">
+        <http:inbound-endpoint exchange-pattern="request-response"   doc:name="HTTP" host="localhost" path="ws_sub_unsub" port="8081"/>
         <cxf:jaxws-service doc:name="SOAP" serviceClass="ws.SubscriptionUnsubscription"/>
         <choice doc:name="Choice">
             <when expression="method.name=='subscribe'">
+                <expression-component doc:name="Subscribe"><![CDATA[flowVars.email=payload[0];
+flowVars.region=payload[1];
+flowVars.soap=payload[2];
+flowVars.digest = payload[3];]]></expression-component>
 
-                <flow-ref name="subscribe" doc:name="Subscribe Flow"/>
+                <flow-ref name="subscribe" doc:name="Subscribe SubFlow"/>
             </when>
             <when expression="method.name=='unsubscribe'">
-                <flow-ref name="unsubscribe" doc:name="Unsubscribe Flow"/>
+                <expression-component doc:name="Unsubscribe"><![CDATA[flowVars.email=payload;
+]]></expression-component>
+                <flow-ref name="unsubscribe" doc:name="Unsubscribe SubFlow"/>
             </when>
 
             <otherwise>
@@ -53,7 +153,7 @@ http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smt
     <sub-flow name="subscribe" doc:name="subscribe">
         <enricher doc:name="Message Enricher">
             <db:select config-ref="Generic_Database_Configuration" doc:name="Check existence in Database">
-                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[payload[0]]]]></db:parameterized-query>
+                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[flowVars.email]]]></db:parameterized-query>
 
             </db:select>
             <enrich source="#[payload.size() &gt; 0]" target="#[flowVars.exists]"/>
@@ -61,12 +161,8 @@ http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smt
         </enricher>
         <choice doc:name="Choice">
             <when expression="#[flowVars['exists']==false]">
-        <expression-component doc:name="Subscribe"><![CDATA[flowVars.email=payload[0];
-flowVars.region=payload[1];
-flowVars.soap=payload[2];
-flowVars.digest = payload[3];]]></expression-component>
                 <db:insert config-ref="Generic_Database_Configuration" doc:name="Insert Subscription">
-                    <db:parameterized-query><![CDATA[INSERT INTO subscribers VALUES(nextval('subscribers_id_seq'), #[payload[0]],#[payload[1]],#[payload[2]],#[payload[3]],0);]]></db:parameterized-query>
+                    <db:parameterized-query><![CDATA[INSERT INTO subscribers VALUES(nextval('subscribers_id_seq'), #[flowVars.email],#[flowVars.region],#[flowVars.soap],#[flowVars.digest],0);]]></db:parameterized-query>
                 </db:insert>
                 <set-payload value="Confirm your subscription by clicking the link: http://localhost:8081/confirmation?code=#[flowVars.email]&amp;type=s" doc:name="Set Email Body"/>
                 <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[flowVars.email]" from="systemsintegration14@gmail.com" subject="Confirm your subscription" responseTimeout="10000" doc:name="Confirmation Email"/>
@@ -82,17 +178,16 @@ flowVars.digest = payload[3];]]></expression-component>
     <sub-flow name="unsubscribe" doc:name="unsubscribe">
         <enricher doc:name="Message Enricher">
             <db:select config-ref="Generic_Database_Configuration" doc:name="Check existence in Database">
-                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[payload]]]></db:parameterized-query>
+                <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE email=#[flowVars.email]]]></db:parameterized-query>
             </db:select>
             <enrich source="#[payload.size() &gt; 0]" target="#[flowVars.exists]"/>
             <enrich source="#[payload]" target="#[flowVars.dbRecord]"/>
         </enricher>
         <choice doc:name="Choice">
             <when expression="#[flowVars['exists']==true]">
-                <expression-component doc:name="Unsubscribe"><![CDATA[flowVars.email=payload;
-]]></expression-component>
+
                 <set-payload value="Confirm your unsubscription by clicking the link: http://localhost:8081/confirmation?code=#[flowVars.email]&amp;type=u" doc:name="Set Email Body"/>
-                <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[flowVars.email]" from="systemsintegration14@gmail.com" subject="Confirm your subscription" responseTimeout="10000" doc:name="Confirmation Email"/>
+                <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[flowVars.email]" from="systemsintegration14@gmail.com" subject="Confirm your unsubscription" responseTimeout="10000" doc:name="Confirmation Email"/>
                 <set-payload value="AN EMAIL HAS BEEN SENT. YOU STILL NEED TO CONFIRM YOUR UNSUBSCRIPTION." doc:name="SUCCESS"/>
             </when>
             <otherwise>
@@ -100,5 +195,6 @@ flowVars.digest = payload[3];]]></expression-component>
             </otherwise>
         </choice>
     </sub-flow>
+
 
 </mule>
