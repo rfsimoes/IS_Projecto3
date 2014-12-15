@@ -21,7 +21,7 @@ http://www.mulesoft.org/schema/mule/twitter http://www.mulesoft.org/schema/mule/
     <flow name="readfile" doc:name="readfile">
         <file:inbound-endpoint path="C:\CNN" responseTimeout="10000" doc:name="File"/>
         <flow-ref name="addnews" doc:name="Flow Reference"/>
-        <logger message="F&#233; no pau e penalty para o porto" level="INFO" doc:name="Logger"/>
+
     </flow>
     <flow name="webclient" doc:name="webclient">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="webclient" doc:name="HTTP"/>
