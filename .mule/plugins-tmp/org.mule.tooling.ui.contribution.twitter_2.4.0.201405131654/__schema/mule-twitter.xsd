@@ -1,0 +1,1581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<xs:schema xmlns:ns2="http://www.mulesoft.org/schema/mule/devkit" xmlns:mule="http://www.mulesoft.org/schema/mule/core" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified" targetNamespace="http://www.mulesoft.org/schema/mule/twitter">
+  <xs:import namespace="http://www.w3.org/XML/1998/namespace"></xs:import>
+  <xs:import schemaLocation="http://www.springframework.org/schema/beans/spring-beans-3.0.xsd" namespace="http://www.springframework.org/schema/beans"></xs:import>
+  <xs:import schemaLocation="http://www.mulesoft.org/schema/mule/core/current/mule.xsd" namespace="http://www.mulesoft.org/schema/mule/core"></xs:import>
+  <xs:element xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="config" substitutionGroup="mule:abstract-extension" ns2:javaClass="org.mule.twitter.connectivity.TwitterConnectorConnectionManager">
+    <xs:complexType>
+      <xs:complexContent>
+        <xs:extension base="mule:abstractExtensionType">
+          <xs:annotation>
+            <xs:documentation>Twitter is an online social networking service and microblogging service that enables its users to send and read
+text-based posts of up to 140 characters, known as "tweets".</xs:documentation>
+          </xs:annotation>
+          <xs:sequence>
+            <xs:element name="connection-pooling-profile" minOccurs="0" type="mule:poolingProfileType">
+              <xs:annotation>
+                <xs:documentation>Characteristics of the connection pool.</xs:documentation>
+              </xs:annotation>
+            </xs:element>
+            <xs:element ref="mule:abstract-reconnection-strategy" minOccurs="0">
+              <xs:annotation>
+                <xs:documentation>Reconnection strategy that defines how Mule should handle a connection failure.</xs:documentation>
+              </xs:annotation>
+            </xs:element>
+          </xs:sequence>
+          <xs:attribute name="name" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Give a name to this configuration so it can be later referenced by config-ref.</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="consumerKey" use="required" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>The consumer key used by this application</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="consumerSecret" use="required" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>The consumer key secret by this application</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="useSSL" default="true" use="optional" type="booleanType">
+            <xs:annotation>
+              <xs:documentation>Whether to use SSL in API calls to Twitter</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="proxyHost" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Proxy host</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="proxyPort" default="-1" use="optional" type="integerType">
+            <xs:annotation>
+              <xs:documentation>Proxy port</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="proxyUsername" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Proxy username</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="proxyPassword" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Proxy password</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="streamBaseUrl" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Twitter Stream Base Url. Only specified this to override the default Twitter values</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="siteStreamBaseUrl" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>Twitter Site Stream Base Url. Only specified this to override the default Twitter values</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="accessKey" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>The access key provided by Twitter</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+          <xs:attribute name="accessSecret" use="optional" type="xs:string">
+            <xs:annotation>
+              <xs:documentation>The access secret provided by Twitter</xs:documentation>
+            </xs:annotation>
+          </xs:attribute>
+        </xs:extension>
+      </xs:complexContent>
+    </xs:complexType>
+  </xs:element>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="search" substitutionGroup="mule:abstract-message-processor" type="SearchType">
+    <xs:annotation>
+      <xs:documentation>Returns tweets that match a specified query.
+&lt;p/&gt;
+This method calls http://search.twitter.com/search.json
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SearchType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="query" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The search query.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="lang" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Restricts tweets to the given language, given by an &lt;a href="http://en.wikipedia.org/wiki/ISO_639-1"&gt;ISO 639-1 code&lt;/a&gt;</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="locale" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify the language of the query you are sending (only ja is currently effective). This is intended for language-specific clients and the default should work in the majority of cases.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="maxId" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>If specified, returns tweets with status ids less than the given id</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="since" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>If specified, returns tweets since the given date. Date should be formatted as YYYY-MM-DD</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns tweets with status ids greater than the given id.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="geocode" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>A  containing the latitude and longitude separated by ','. Used to get the tweets by users located within a given radius of the given latitude/longitude, where the user's location is taken from their Twitter profile</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="radius" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The radius to be used in the geocode -ONLY VALID IF A GEOCODE IS GIVEN-</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="unit" default="mi" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The unit of measurement of the given radius. Can be 'mi' or 'km'. Miles by default.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="until" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>If specified, returns tweets with generated before the given date. Date should be formatted as YYYY-MM-DD</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="resultType" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>If specified, returns tweets included popular or real time or both in the responce. Both by default. Can be 'mixed', 'popular' or 'recent'.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-home-timeline" substitutionGroup="mule:abstract-message-processor" type="GetHomeTimelineType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent statuses, including retweets, posted by the
+authenticating user and that user's friends. This is the equivalent of
+/timeline/home on the Web.&lt;br&gt;
+Usage note: This home_timeline call is identical to statuses/friends_timeline,
+except that home_timeline also contains retweets, while
+statuses/friends_timeline does not for backwards compatibility reasons. In a
+future version of the API, statuses/friends_timeline will be deprected and
+replaced by home_timeline. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/home_timeline
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetHomeTimelineType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of records to retrieve. Must be less than or equal to 200.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-user-timeline-by-screen-name" substitutionGroup="mule:abstract-message-processor" type="GetUserTimelineByScreenNameType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent statuses posted from the authenticating user. It's
+also possible to request another user's timeline via the id parameter.&lt;br&gt;
+This is the equivalent of the Web / page for your own user, or the profile
+page for a third party.&lt;br&gt;
+For backwards compatibility reasons, retweets are stripped out of the
+user_timeline when calling in XML or JSON (they appear with 'RT' in RSS and
+Atom). If you'd like them included, you can merge them in from statuses
+retweeted_by_me.&lt;br&gt;
+&lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/user_timeline.json
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetUserTimelineByScreenNameType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="screenName" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The screen name of the user for whom to return results for</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of tweets to try and retrieve, up to a maximum of 200. The value of count is best thought of as a limit to the number of tweets to return because suspended or deleted content is removed after the count has been applied.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-user-timeline-by-user-id" substitutionGroup="mule:abstract-message-processor" type="GetUserTimelineByUserIdType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent statuses posted from the authenticating user. It's
+also possible to request another user's timeline via the id parameter.&lt;br&gt;
+This is the equivalent of the Web / page for your own user, or the profile
+page for a third party.&lt;br&gt;
+For backwards compatibility reasons, retweets are stripped out of the
+user_timeline when calling in XML or JSON (they appear with 'RT' in RSS and
+Atom). If you'd like them included, you can merge them in from statuses
+retweeted_by_me.&lt;br&gt;
+&lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/user_timeline.json
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetUserTimelineByUserIdType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="userId" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>specifies the ID of the user for whom to return the user_timeline</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of tweets to try and retrieve, up to a maximum of 200. The value of count is best thought of as a limit to the number of tweets to return because suspended or deleted content is removed after the count has been applied.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-user-timeline" substitutionGroup="mule:abstract-message-processor" type="GetUserTimelineType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent statuses posted from the authenticating user. It's
+also possible to request another user's timeline via the id parameter.&lt;br&gt;
+This is the equivalent of the Web / page for your own user, or the profile
+page for a third party.&lt;br&gt;
+For backwards compatibility reasons, retweets are stripped out of the
+user_timeline when calling in XML or JSON (they appear with 'RT' in RSS and
+Atom). If you'd like them included, you can merge them in from statuses
+retweeted_by_me.&lt;br&gt;
+&lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/user_timeline.json
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetUserTimelineType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of tweets to try and retrieve, up to a maximum of 200. The value of count is best thought of as a limit to the number of tweets to return because suspended or deleted content is removed after the count has been applied.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-mentions-timeline" substitutionGroup="mule:abstract-message-processor" type="GetMentionsTimelineType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent mentions (status containing @username) for the
+authenticating user. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/mentions_timeline
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetMentionsTimelineType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of tweets to try and retrieve, up to a maximum of 200. The value of count is best thought of as a limit to the number of tweets to return because suspended or deleted content is removed after the count has been applied.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-retweets-of-me" substitutionGroup="mule:abstract-message-processor" type="GetRetweetsOfMeType">
+    <xs:annotation>
+      <xs:documentation>Returns the 20 most recent tweets of the authenticated user that have been
+retweeted by others. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/retweets_of_me
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetRetweetsOfMeType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="page" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the page of results to retrieve.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="20" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Specifies the number of tweets to try and retrieve, up to a maximum of 200. The value of count is best thought of as a limit to the number of tweets to return because suspended or deleted content is removed after the count has been applied.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="sinceId" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Returns results with an ID greater than (that is, more recent than) the specified ID. There are limits to the number of Tweets which can be accessed through the API. If the limit of Tweets has occured since the since_id, the since_id will be forced to the oldest ID available.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="show-status" substitutionGroup="mule:abstract-message-processor" type="ShowStatusType">
+    <xs:annotation>
+      <xs:documentation>Returns a single status, specified by the id parameter below. The status's
+author will be returned inline. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/show
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="ShowStatusType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="id" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>the numerical ID of the status you're trying to retrieve</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="show-user" substitutionGroup="mule:abstract-message-processor" type="ShowUserType">
+    <xs:annotation>
+      <xs:documentation>Answers user information for the authenticated user
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="ShowUserType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-followers" substitutionGroup="mule:abstract-message-processor" type="GetFollowersType">
+    <xs:annotation>
+      <xs:documentation>Returns a cursored collection of user objects for users following the specified user.&lt;br&gt;
+At this time, results are ordered with the most recent following first, however, this ordering is subject to unannounced
+change and eventual consistency issues. Results are given in groups of 20 users and multiple "pages" of results can be
+navigated through using the next_cursor value in subsequent requests.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetFollowersType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="cursor" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>Causes the results to be broken into pages of no more than 20 records at a time.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="update-status" substitutionGroup="mule:abstract-message-processor" type="UpdateStatusType">
+    <xs:annotation>
+      <xs:documentation>Updates the authenticating user's status. A status update with text identical
+to the authenticating user's text identical to the authenticating user's
+current status will be ignored to prevent duplicates. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/update
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="UpdateStatusType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="status" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>the text of your status update</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="inReplyTo" default="-1" use="optional" type="longType">
+          <xs:annotation>
+            <xs:documentation>The ID of an existing status that the update is in reply to.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The latitude of the location this tweet refers to. This parameter will be ignored unless it is inside the range -90.0 to +90.0 (North is positive) inclusive.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>he longitude of the location this tweet refers to. The valid ranges for longitude is -180.0 to +180.0 (East is positive) inclusive. This parameter will be ignored if outside that range or if there not a corresponding lat parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="destroy-status" substitutionGroup="mule:abstract-message-processor" type="DestroyStatusType">
+    <xs:annotation>
+      <xs:documentation>Destroys the status specified by the required ID parameter.&lt;br&gt;
+Usage note: The authenticating user must be the author of the specified
+status. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/destroy
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="DestroyStatusType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="statusId" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>The ID of the status to destroy.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="retweet-status" substitutionGroup="mule:abstract-message-processor" type="RetweetStatusType">
+    <xs:annotation>
+      <xs:documentation>Retweets a tweet. Returns the original tweet with retweet details embedded. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/retweet
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="RetweetStatusType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="statusId" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>The ID of the status to retweet.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-retweets" substitutionGroup="mule:abstract-message-processor" type="GetRetweetsType">
+    <xs:annotation>
+      <xs:documentation>Returns up to 100 of the first retweets of a given tweet. &lt;br&gt;
+This method calls http://api.twitter.com/1.1/statuses/retweets
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetRetweetsType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="statusId" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>The numerical ID of the tweet you want the retweets of.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="set-oauth-verifier" substitutionGroup="mule:abstract-message-processor" type="SetOauthVerifierType">
+    <xs:annotation>
+      <xs:documentation>Set the OAuth verifier after it has been retrieved via requestAuthorization.
+The resulting access tokens will be logged to the INFO level so the user can
+reuse them as part of the configuration in the future if desired.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SetOauthVerifierType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="requestToken-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>request token from Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="oauthVerifier" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The OAuth verifier code from Twitter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="request-authorization" substitutionGroup="mule:abstract-message-processor" type="RequestAuthorizationType">
+    <xs:annotation>
+      <xs:documentation>Start the OAuth request authorization process.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="RequestAuthorizationType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="callbackUrl" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>the url to be requested when the user authorizes this app</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="reverse-geo-code" substitutionGroup="mule:abstract-message-processor" type="ReverseGeoCodeType">
+    <xs:annotation>
+      <xs:documentation>Search for places (cities and neighborhoods) that can be attached to a
+statuses/update. Given a latitude and a longitude, return a list of all the
+valid places that can be used as a place_id when updating a status.
+Conceptually, a query can be made from the user's location, retrieve a list of
+places, have the user validate the location he or she is at, and then send the
+ID of this location up with a call to statuses/update.&lt;br&gt;
+There are multiple granularities of places that can be returned --
+"neighborhoods", "cities", etc. At this time, only United States data is
+available through this method.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="ReverseGeoCodeType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>latitude coordinate. Mandatory if ip is not specified</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>longitude coordinate.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="search-places" substitutionGroup="mule:abstract-message-processor" type="SearchPlacesType">
+    <xs:annotation>
+      <xs:documentation>Search for places that can be attached to a statuses/update. Given a latitude
+and a longitude pair, or and IP address, this request will return a list of
+all the valid places that can be used as the place_id when updating a status.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SearchPlacesType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>latitude coordinate. Mandatory if ip is not specified</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="optional" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>longitude coordinate.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="ip" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>the ip. Mandatory if coordinates are not specified</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-geo-details" substitutionGroup="mule:abstract-message-processor" type="GetGeoDetailsType">
+    <xs:annotation>
+      <xs:documentation>Find out more details of a place that was returned from the reverseGeoCode
+operation.
+&lt;p/&gt;
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetGeoDetailsType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="id" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The ID of the location to query about.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="create-place" substitutionGroup="mule:abstract-message-processor" type="CreatePlaceType">
+    <xs:annotation>
+      <xs:documentation>Creates a new place at the given latitude and longitude.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="CreatePlaceType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="placeName" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The placeName a place is known as.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="containedWithin" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The place_id within which the new place can be found. Try and be as close as possible with the containing place. For example, for a room in a building, set the contained_within as the building place_id.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="token" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The token found in the response from geo/similar_places.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The latitude the place is located at.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The longitude the place is located at.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="streetAddress" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>optional: This parameter searches for places which have this given street address. There are other well-known, and application specific attributes available. Custom attributes are also permitted. Learn more about Place Attributes.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-similar-places" substitutionGroup="mule:abstract-message-processor" type="GetSimilarPlacesType">
+    <xs:annotation>
+      <xs:documentation>Locates places near the given coordinates which are similar in name.
+Conceptually you would use this method to get a list of known places to choose from first.
+Then, if the desired place doesn't exist, make a request to POST geo/place to create a new one.
+The token contained in the response is the token needed to be able to create a new place.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetSimilarPlacesType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The latitude to search around. This parameter will be ignored unless it is inside the range -90.0 to +90.0 (North is positive) inclusive. It will also be ignored if there isn't a corresponding long parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The longitude to search around. The valid ranges for longitude is -180.0 to +180.0 (East is positive) inclusive. This parameter will be ignored if outside that range, if it is not a number, if geo_enabled is disabled, or if there not a corresponding lat parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="placeName" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The name a place is known as.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="containedWithin" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>This is the place_id which you would like to restrict the search results to. Setting this value means only places within the given place_id will be found.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="streetAddress" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>This parameter searches for places which have this given street address. There are other well-known, and application specific attributes available. Custom attributes are also permitted.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-available-trends" substitutionGroup="mule:abstract-message-processor" type="GetAvailableTrendsType">
+    <xs:annotation>
+      <xs:documentation>Returns the sorted locations that Twitter has trending topic information for.
+The response is an array of &amp;quot;locations&amp;quot; that encode the location's WOEID
+(a &lt;a href="http://developer.yahoo.com/geo/geoplanet/"&gt;Yahoo! Where On Earth ID&lt;/a&gt;)
+and some other human-readable information such as a canonical name and country the
+location belongs in.
+&lt;br&gt;The available trend locations will be sorted by distance to the lat
+and long passed in. The sort is nearest to furthest.</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetAvailableTrendsType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="send-direct-message-by-screen-name" substitutionGroup="mule:abstract-message-processor" type="SendDirectMessageByScreenNameType">
+    <xs:annotation>
+      <xs:documentation>Sends a new direct message to the specified user from the authenticating user.
+Requires both the user and text parameters below. The text will be trimmed if
+the length of the text is exceeding 140 characters.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SendDirectMessageByScreenNameType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="screenName" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The screen name of the user to whom send the direct message</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="message" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The text of your direct message</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="send-direct-message-by-user-id" substitutionGroup="mule:abstract-message-processor" type="SendDirectMessageByUserIdType">
+    <xs:annotation>
+      <xs:documentation>Sends a new direct message to the specified user from the authenticating user.
+Requires both the user and text parameters below. The text will be trimmed if
+the length of the text is exceeding 140 characters.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SendDirectMessageByUserIdType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="userId" use="required" type="longType">
+          <xs:annotation>
+            <xs:documentation>The user ID of the user to whom send the direct message</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="message" use="required" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The text of your direct message</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-place-trends" substitutionGroup="mule:abstract-message-processor" type="GetPlaceTrendsType">
+    <xs:annotation>
+      <xs:documentation>Returns the top 10 trending topics for a specific WOEID, if trending information is available for it.&lt;br&gt;
+The response is an array of "trend" objects that encode the name of the trending topic, the query parameter that can be used to search for the topic on &lt;a href="http://search.twitter.com/"&gt;Twitter Search&lt;/a&gt;, and the Twitter Search URL.&lt;br&gt;
+This information is cached for 5 minutes. Requesting more frequently than that will not return any more data, and will count against your rate limit usage.&lt;br&gt;
+&lt;br&gt;This method calls http://api.twitter.com/1.1/trends/place.json</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetPlaceTrendsType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="woeid" default="1" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>&lt;a href="http://developer.yahoo.com/geo/geoplanet/"&gt;The Yahoo! Where On Earth ID&lt;/a&gt; of the location to return trending information for. Global information is available by using 1 as the WOEID.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="get-closest-trends" substitutionGroup="mule:abstract-message-processor" type="GetClosestTrendsType">
+    <xs:annotation>
+      <xs:documentation>Returns the locations that Twitter has trending topic information for, closest to a specified location.&lt;br&gt;
+The response is an array of "locations" that encode the location's WOEID and some other human-readable information such as a canonical name and country the location belongs in.&lt;br&gt;
+A WOEID is a &lt;a href="http://developer.yahoo.com/geo/geoplanet/"&gt;Yahoo! Where On Earth ID&lt;/a&gt;.
+&lt;br&gt;This method calls http://api.twitter.com/1.1/trends/closest.json</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="GetClosestTrendsType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractMessageProcessorType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="latitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>The latitude of the location this tweet refers to. This parameter will be ignored unless it is inside the range -90.0 to +90.0 (North is positive) inclusive.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="longitude" use="required" type="doubleType">
+          <xs:annotation>
+            <xs:documentation>he longitude of the location this tweet refers to. The valid ranges for longitude is -180.0 to +180.0 (East is positive) inclusive. This parameter will be ignored if outside that range or if there not a corresponding lat parameter.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessKey" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access key provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute name="accessSecret" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>The access secret provided by Twitter</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="filtered-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="FilteredStreamType">
+    <xs:annotation>
+      <xs:documentation>Asynchronously retrieves public statuses that match one or more filter predicates.
+&lt;p/&gt;
+At least a keyword or userId must be specified. Multiple parameters may be
+specified.
+&lt;p/&gt;
+Placing long parameters in the URL may cause the request to be rejected for excessive URL length.
+&lt;p/&gt;
+The default access level allows up to 200 track keywords and 400 follow userids.
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="FilteredStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:sequence>
+          <xs:element name="user-ids" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>the user ids to follow</xs:documentation>
+            </xs:annotation>
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="user-id" maxOccurs="unbounded" minOccurs="0">
+                  <xs:complexType>
+                    <xs:simpleContent>
+                      <xs:extension base="xs:string">
+                        <xs:attribute name="value-ref" use="optional" type="xs:string"></xs:attribute>
+                      </xs:extension>
+                    </xs:simpleContent>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="ref" use="optional" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>The reference object for this parameter</xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+          <xs:element name="keywords" maxOccurs="1" minOccurs="0">
+            <xs:annotation>
+              <xs:documentation>the keywords to track</xs:documentation>
+            </xs:annotation>
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="keyword" maxOccurs="unbounded" minOccurs="0">
+                  <xs:complexType>
+                    <xs:simpleContent>
+                      <xs:extension base="xs:string">
+                        <xs:attribute name="value-ref" use="optional" type="xs:string"></xs:attribute>
+                      </xs:extension>
+                    </xs:simpleContent>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="ref" use="optional" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>The reference object for this parameter</xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" default="0" use="optional" type="integerType">
+          <xs:annotation>
+            <xs:documentation>the number of previous statuses to stream before transitioning to the live stream.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="sample-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="SampleStreamType">
+    <xs:annotation>
+      <xs:documentation>Asynchronously retrieves a random sample of all public statuses. The sample
+size and quality varies depending on the account permissions
+&lt;p/&gt;
+The default access level provides a small proportion of the Firehose. The "Gardenhose"
+access level provides a proportion more suitable for data mining
+and research applications that desire a larger proportion to be
+statistically significant sample.
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SampleStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="firehose-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="FirehoseStreamType">
+    <xs:annotation>
+      <xs:documentation>Asynchronously retrieves all public statuses. This stream is not generally
+available - it requires special permissions and its usage is discouraged by
+Twitter
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="FirehoseStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" use="required" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Indicates the number of previous statuses to consider for delivery before transitioning to live stream delivery.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="link-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="LinkStreamType">
+    <xs:annotation>
+      <xs:documentation>Asynchronously retrieves all statuses containing 'http:' and 'https:'. Like
+Firehorse, its is not a generally available stream
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="LinkStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="count" use="required" type="integerType">
+          <xs:annotation>
+            <xs:documentation>Indicates the number of previous statuses to consider for delivery before transitioning to live stream delivery.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="user-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="UserStreamType">
+    <xs:annotation>
+      <xs:documentation>Retrieves the following user updates notifications:&lt;br/&gt;
+- New Statuses &lt;br/&gt;
+- Block/Unblock events &lt;br/&gt;
+- Follow events &lt;br/&gt;
+- User profile updates &lt;br/&gt;
+- Retweets &lt;br/&gt;
+- List creation/deletion &lt;br/&gt;
+- List member addition/remotion &lt;br/&gt;
+- List subscription/unsubscription &lt;br/&gt;
+- List updates &lt;br/&gt;
+- Profile updates &lt;br/&gt;
+&lt;p/&gt;
+Such notifications are represented as org.mule.twitter.UserEvent objects
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="UserStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:sequence>
+          <xs:element name="keywords" maxOccurs="1" minOccurs="1">
+            <xs:annotation>
+              <xs:documentation>the keywords to track for new statuses</xs:documentation>
+            </xs:annotation>
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="keyword" maxOccurs="unbounded" minOccurs="0">
+                  <xs:complexType>
+                    <xs:simpleContent>
+                      <xs:extension base="xs:string">
+                        <xs:attribute name="value-ref" use="optional" type="xs:string"></xs:attribute>
+                      </xs:extension>
+                    </xs:simpleContent>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="ref" use="optional" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>The reference object for this parameter</xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element xmlns="http://www.mulesoft.org/schema/mule/twitter" xmlns:mule="http://www.mulesoft.org/schema/mule/core" name="site-stream" substitutionGroup="mule:abstract-inbound-endpoint" type="SiteStreamType">
+    <xs:annotation>
+      <xs:documentation>Asynchronously retrieves statutes for a set of supplied user's ids.
+Site Streams are a beta service, so refer always to latest twitter documentation about them.
+&lt;p/&gt;
+Only one Twitter stream can be consumed using the same credentials. As a consequence,
+only one twitter stream can be consumed per connector instance.
+&lt;p/&gt;</xs:documentation>
+    </xs:annotation>
+  </xs:element>
+  <xs:complexType name="SiteStreamType">
+    <xs:complexContent>
+      <xs:extension xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:abstractInboundEndpointType">
+        <xs:sequence>
+          <xs:element name="user-ids" maxOccurs="1" minOccurs="1">
+            <xs:annotation>
+              <xs:documentation>ids of users to include in the stream</xs:documentation>
+            </xs:annotation>
+            <xs:complexType>
+              <xs:sequence>
+                <xs:element name="user-id" maxOccurs="unbounded" minOccurs="0">
+                  <xs:complexType>
+                    <xs:simpleContent>
+                      <xs:extension base="xs:string">
+                        <xs:attribute name="value-ref" use="optional" type="xs:string"></xs:attribute>
+                      </xs:extension>
+                    </xs:simpleContent>
+                  </xs:complexType>
+                </xs:element>
+              </xs:sequence>
+              <xs:attribute name="ref" use="optional" type="xs:string">
+                <xs:annotation>
+                  <xs:documentation>The reference object for this parameter</xs:documentation>
+                </xs:annotation>
+              </xs:attribute>
+            </xs:complexType>
+          </xs:element>
+        </xs:sequence>
+        <xs:attribute name="config-ref" use="optional" type="xs:string">
+          <xs:annotation>
+            <xs:documentation>Specify which configuration to use for this invocation.</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+        <xs:attribute xmlns="http://www.mulesoft.org/schema/mule/twitter" name="withFollowings" default="false" use="optional" type="booleanType">
+          <xs:annotation>
+            <xs:documentation>withFollowings whether to receive status updates from people following</xs:documentation>
+          </xs:annotation>
+        </xs:attribute>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:simpleType name="integerType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:integer"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="decimalType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:decimal"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="floatType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:float"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="doubleType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:double"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="dateTimeType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:dateTime"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="longType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:long"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="byteType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:byte"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="booleanType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:boolean"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="anyUriType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:anyURI"></xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  <xs:simpleType name="charType">
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:minLength value="1"></xs:minLength>
+          <xs:maxLength value="1"></xs:maxLength>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction xmlns:mule="http://www.mulesoft.org/schema/mule/core" base="mule:propertyPlaceholderType"></xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+</xs:schema>

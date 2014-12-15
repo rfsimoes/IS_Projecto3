@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:twitter="http://www.mulesoft.org/schema/mule/twitter" xmlns:file="http://www.mulesoft.org/schema/mule/file" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:smtp="http://www.mulesoft.org/schema/mule/smtp" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.2"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -11,11 +11,13 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/smtp http://www.mulesoft.org/schema/mule/smtp/current/mule-smtp.xsd
 http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
-http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd">
+http://www.mulesoft.org/schema/mule/file http://www.mulesoft.org/schema/mule/file/current/mule-file.xsd
+http://www.mulesoft.org/schema/mule/twitter http://www.mulesoft.org/schema/mule/twitter/current/mule-twitter.xsd">
     <db:generic-config name="Generic_Database_Configuration" url="jdbc:postgresql://localhost:5432/IS?user=postgres&amp;password=postgres" driverClassName="org.postgresql.Driver" doc:name="Generic Database Configuration"/>
     <smtp:gmail-connector name="Gmail" validateConnections="true" doc:name="Gmail"/>
     <mulexml:jaxb-context name="myJaxb" packageNames="generated" doc:name="JAXB Context"/>
     <mulexml:schema-validation-filter schemaLocations="Example.xsd" returnResult="true" name="Schema_Validation" doc:name="Schema Validation"/>
+    <twitter:config name="Twitter" accessKey="${twitter.accessKey}" accessSecret="${twitter.accessSecret}" consumerKey="${twitter.consumerKey}" consumerSecret="${twitter.consumerSecret}" doc:name="Twitter"/>
     <flow name="readfile" doc:name="readfile">
         <file:inbound-endpoint path="C:\CNN" responseTimeout="10000" doc:name="File"/>
         <flow-ref name="addnews" doc:name="Flow Reference"/>
@@ -44,6 +46,7 @@ flowVars.digest = Integer.parseInt(payload.digest);]]></expression-component>
         <http:inbound-endpoint exchange-pattern="request-response"  doc:name="HTTP" host="localhost" path="ws_addnews" port="8081"/>
         <cxf:jaxws-service serviceClass="ws.AddNews" doc:name="SOAP"/>
         <flow-ref name="addnews" doc:name="Add News SubFlow"/>
+        <set-payload value="SUCCESFULLY SENT TO THE SERVER AND ADDED TO THE DATABASE!!" doc:name="Set Payload"/>
     </flow>
     <flow name="addnews" doc:name="addnews">
         <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="myJaxb" doc:name="XML to JAXB Object"/>
@@ -54,7 +57,32 @@ flowVars.digest = Integer.parseInt(payload.digest);]]></expression-component>
                 <logger message="#[payload.title]" level="INFO" doc:name="Logger"/>
                 <choice doc:name="Choice">
                     <when expression="payload.photoURL != null || payload.videoURL != null">
+                        <expression-component doc:name="Expression"><![CDATA[import java.util.Calendar;
+
+Calendar cal = Calendar.getInstance();
+cal.set(Calendar.YEAR, payload.date.year);
+cal.set(Calendar.MONTH, payload.date.month-1);
+cal.set(Calendar.DATE, payload.date.day);
+cal.set(Calendar.HOUR_OF_DAY,  payload.date.hour/100);
+cal.set(Calendar.MINUTE,  payload.date.hour%100);
+cal.set(Calendar.SECOND, 0);
+cal.set(Calendar.MILLISECOND, 0);
+java.sql.Timestamp jsqlTs = new java.sql.Timestamp(cal.getTime().getTime());
+
+flowVars.date = jsqlTs;
+flowVars.calNews = cal;
+flowVars.title = payload.title;]]></expression-component>
                         <flow-ref name="insertnews" doc:name="Flow Reference"/>
+                        <logger message="#[server.dateTime.year] / #[server.dateTime.month] / #[server.dateTime.dayOfMonth]" level="INFO" doc:name="Logger"/>
+                        <logger message="#[flowVars.calNews.get(Calendar.YEAR)] / #[flowVars.calNews.get(Calendar.MONTH)+1] / #[flowVars.calNews.get(Calendar.DAY_OF_MONTH)]" level="INFO" doc:name="Logger"/>
+                        <choice doc:name="Choice">
+                            <when expression="flowVars.calNews.get(Calendar.YEAR) == server.dateTime.year &amp;&amp; flowVars.calNews.get(Calendar.MONTH)+1 == server.dateTime.month &amp;&amp; flowVars.calNews.get(Calendar.DAY_OF_MONTH) == server.dateTime.dayOfMonth">
+                                <twitter:update-status config-ref="Twitter"      doc:name="Twitter" status="#[flowVars.title]"/>
+                            </when>
+                            <otherwise>
+                                <logger message="NOT DAILY" level="INFO" doc:name="Logger"/>
+                            </otherwise>
+                        </choice>
                     </when>
                     <otherwise>
                         <logger message="N&#195;O TEM MEDIA" level="INFO" doc:name="Logger"/>
@@ -63,25 +91,12 @@ flowVars.digest = Integer.parseInt(payload.digest);]]></expression-component>
             </foreach>
         </foreach>
     </flow>
-    <flow name="insertnews" doc:name="insertnews">
+    <sub-flow name="insertnews" doc:name="insertnews">
         <logger message="TEM MEDIA" level="INFO" doc:name="Logger"/>
-        <expression-component doc:name="Expression"><![CDATA[import java.util.Calendar;
-
-Calendar cal = Calendar.getInstance();
-cal.set(Calendar.YEAR, payload.date.year);
-cal.set(Calendar.MONTH, payload.date.month);
-cal.set(Calendar.DATE, payload.date.day);
-cal.set(Calendar.HOUR_OF_DAY,  payload.date.hour/100);
-cal.set(Calendar.MINUTE,  payload.date.hour%100);
-cal.set(Calendar.SECOND, 0);
-cal.set(Calendar.MILLISECOND, 0);
-java.sql.Timestamp jsqlTs = new java.sql.Timestamp(cal.getTime().getTime());
-
-flowVars.date = jsqlTs;]]></expression-component>
         <db:insert config-ref="Generic_Database_Configuration" doc:name="Database">
             <db:parameterized-query><![CDATA[INSERT INTO news VALUES(nextval('news_newsid_seq'), #[flowVars.date],#[payload.photoURL],#[flowVars.region],#[payload.text],#[payload.title],#[payload.url],#[payload.videoURL]);]]></db:parameterized-query>
         </db:insert>
-    </flow>
+    </sub-flow>
     <flow name="insertauthors" doc:name="insertauthors">
         <foreach collection="payload.author" doc:name="For Each">
             <enricher doc:name="Message Enricher">
