@@ -73,7 +73,8 @@ java.sql.Timestamp jsqlTs = new java.sql.Timestamp(cal.getTime().getTime());
 flowVars.date = jsqlTs;
 flowVars.calNews = cal;
 flowVars.title = payload.title;]]></expression-component>
-                        <flow-ref name="insertnews" doc:name="Flow Reference"/>
+                        <flow-ref name="nondigest" doc:name="Insert News / Non-Digest"/>
+
                         <choice doc:name="Choice">
                             <when expression="flowVars.calNews.get(Calendar.YEAR) == server.dateTime.year &amp;&amp; flowVars.calNews.get(Calendar.MONTH)+1 == server.dateTime.month &amp;&amp; flowVars.calNews.get(Calendar.DAY_OF_MONTH) == server.dateTime.dayOfMonth">
                                 <twitter:update-status config-ref="Twitter"      doc:name="Twitter" status="#[flowVars.title]"/>
@@ -90,12 +91,24 @@ flowVars.title = payload.title;]]></expression-component>
             </foreach>
         </foreach>
     </flow>
-    <sub-flow name="insertnews" doc:name="insertnews">
+    <sub-flow name="nondigest" doc:name="nondigest">
         <logger message="TEM MEDIA" level="INFO" doc:name="Logger"/>
-        <db:insert config-ref="Generic_Database_Configuration" doc:name="Database">
+        <expression-component doc:name="Expression"><![CDATA[flowVars.url = payload.url;
+flowVars.title = payload.title;
+]]></expression-component>
+        <db:insert config-ref="Generic_Database_Configuration" doc:name="Insert News">
             <db:parameterized-query><![CDATA[INSERT INTO news VALUES(nextval('news_newsid_seq'), #[flowVars.date],#[payload.photoURL],#[flowVars.region],#[payload.text],#[payload.title],#[payload.url],#[payload.videoURL]);]]></db:parameterized-query>
         </db:insert>
+        <db:select config-ref="Generic_Database_Configuration" doc:name="Select non-digest users">
+            <db:parameterized-query><![CDATA[SELECT email FROM subscribers WHERE digest = 0 AND validated = 1 AND region = #[flowVars.region];]]></db:parameterized-query>
+        </db:select>
+        <foreach doc:name="For Each">
+            <expression-component doc:name="Expression"><![CDATA[flowVars.email = payload.email;]]></expression-component>
+            <set-payload value="Read at: #[flowVars.url]" doc:name="Set Payload"/>
+            <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="rfsimoes@student.dei.uc.pt" from="systemsintegration14@gmail.com" subject="#[flowVars.title]" responseTimeout="10000" doc:name="Non-Digest"/>
+        </foreach>
     </sub-flow>
+
     <flow name="insertauthors" doc:name="insertauthors">
         <foreach collection="payload.author" doc:name="For Each">
             <enricher doc:name="Message Enricher">
