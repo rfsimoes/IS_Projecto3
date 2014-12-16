@@ -25,6 +25,8 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.xml.sax.SAXException;
 
+import artifact.*;
+
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
@@ -319,7 +321,13 @@ public class WebCrawler {
 				// Writing to StringWriter
 				StringWriter strWriter = new StringWriter();
 				m.marshal(cnn, strWriter);
-				System.out.println("SUCCESSFULLY SENT!");
+				try {
+					AddNewsService sus = new AddNewsService();
+					AddNews su = sus.getAddNewsPort();
+					System.out.println(su.addNews(strWriter.toString()));
+				} catch (Exception e) {
+					System.out.println("It wasn't possible to send the XML string. Try later.");
+				}
 			}
 
 			// Writing to console

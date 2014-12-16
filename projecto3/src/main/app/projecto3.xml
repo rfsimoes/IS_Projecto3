@@ -23,6 +23,43 @@ http://www.mulesoft.org/schema/mule/twitter http://www.mulesoft.org/schema/mule/
         <flow-ref name="addnews" doc:name="Flow Reference"/>
 
     </flow>
+    <flow name="Digest" doc:name="Digest">
+        <poll doc:name="Poll">
+            <fixed-frequency-scheduler frequency="5" timeUnit="MINUTES"/>
+            <logger message="DIGEST" level="INFO" doc:name="Logger"/>
+        </poll>
+        <expression-component doc:name="Expression"><![CDATA[flowVars.regions = {"US", "AFRICA", "ASIA", "EUROPE", "LATINAMERICA", "MIDDLEEAST"};]]></expression-component>
+        <foreach collection="flowVars.regions" doc:name="For Each Region">
+            <enricher source="#[payload]" target="#[flowVars.news]" doc:name="Message Enricher">
+                <db:select config-ref="Generic_Database_Configuration" doc:name="Get news">
+                    <db:parameterized-query><![CDATA[SELECT * FROM news WHERE region = #[payload];]]></db:parameterized-query>
+                </db:select>
+            </enricher>
+            <enricher source="#[payload]" target="#[flowVars.subs]" doc:name="Message Enricher">
+                <db:select config-ref="Generic_Database_Configuration" doc:name="Get subs">
+                    <db:parameterized-query><![CDATA[SELECT * FROM subscribers WHERE region = #[payload] AND digest = 1;]]></db:parameterized-query>
+                </db:select>
+            </enricher>
+            <choice doc:name="Choice">
+                <when expression="flowVars.subs.size() !=0">
+                    <expression-component doc:name="Expression"><![CDATA[flowVars.emailBody = " ";]]></expression-component>
+                    <foreach collection="flowVars.news" doc:name="For Each News ">
+                        <expression-component doc:name="Expression"><![CDATA[flowVars.emailBody += counter+".\t";
+flowVars.emailBody += payload.title;
+flowVars.emailBody +="\n";
+flowVars.emailBody += "\tRead At: "+payload.url+"\n\n";]]></expression-component>
+                    </foreach>
+                    <set-payload value="#[flowVars.emailBody]" doc:name="Set Payload"/>
+                    <foreach collection="flowVars.subs" doc:name="For Each">
+                        <smtp:outbound-endpoint host="smtp.gmail.com" port="587" user="systemsintegration14%40gmail.com" password="1234567892014" connector-ref="Gmail" to="#[payload['email']]" from="systemsintegration14@gmail.com" subject="Your digest" responseTimeout="10000" doc:name="Digest Email"/>
+                    </foreach>
+                </when>
+                <otherwise>
+                    <logger message="N&#195;O H&#193; UTILIZADORES DIGEST PARA ESTA REGI&#195;O" level="INFO" doc:name="Logger"/>
+                </otherwise>
+            </choice>
+        </foreach>
+    </flow>
     <flow name="webclient" doc:name="webclient">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="webclient" doc:name="HTTP"/>
         <http:body-to-parameter-map-transformer doc:name="Body to Parameter Map"/>
@@ -46,7 +83,7 @@ flowVars.digest = Integer.parseInt(payload.digest);]]></expression-component>
     <flow name="ws_addnews" doc:name="ws_addnews">
         <http:inbound-endpoint exchange-pattern="request-response"  doc:name="HTTP" host="localhost" path="ws_addnews" port="8081"/>
         <cxf:jaxws-service serviceClass="ws.AddNews" doc:name="SOAP"/>
-        <flow-ref name="addnews" doc:name="Add News SubFlow"/>
+        <flow-ref name="addnews" doc:name="Add News Flow"/>
         <set-payload value="SUCCESFULLY SENT TO THE SERVER AND ADDED TO THE DATABASE!!" doc:name="Set Payload"/>
     </flow>
     <flow name="addnews" doc:name="addnews">
